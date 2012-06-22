@@ -12,6 +12,24 @@ module that's deployed to the server so it's available to all clients.
 Each integration point is independent, and if not explicitly activated
 is ignored, so you can use only the parts you need.
 
+TO BUILD
+--------
+
+To build this module, run:
+
+  mvn -DskipTests=true package
+
+Why skip tests? The tests are Arquillian integration tests that require
+JBoss AS 7 to be running locally on default ports unless overridden. Some
+of the tests require the VFS integration system property specified below to be
+set server-side. The tests will fail unless your environment is set up
+correctly, so you can skip them if you just want to produce the library.
+
+The library is produced in target/
+
+
+
+
 VFS INTEGRATION
 ---------------
 
