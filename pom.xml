@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>id.au.ringerc</groupId>
   <artifactId>as7-eclipselink-integration</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
   <name>as7.eclipselink</name>
   <url>http://maven.apache.org</url>
@@ -12,6 +12,12 @@
     <eclipselink.version.2.3.stable>2.3.2</eclipselink.version.2.3.stable>
     <eclipselink.version.2.3.milestone>2.3.3-M3</eclipselink.version.2.3.milestone>
     <eclipselink.version.2.4.milestone>2.4.0-RC2</eclipselink.version.2.4.milestone>
+    <eclipselink.version>${eclipselink.version.2.4.milestone}</eclipselink.version>
+    
+    <as7module.srcdir>${project.basedir}/src/main/as7module</as7module.srcdir>
+    <as7module.destdir>${project.build.directory}/as7module</as7module.destdir>
+    <ECLIPSELINK_JAR_NAME>eclipselink-${eclipselink.version}.jar</ECLIPSELINK_JAR_NAME>
+    <INTEGRATION_JAR_NAME>${project.artifactId}-${project.version}.${project.packaging}</INTEGRATION_JAR_NAME>
   </properties>
   <repositories>
     <repository>
@@ -37,7 +43,7 @@
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>eclipselink</artifactId>
-      <version>${eclipselink.version.2.4.milestone}</version>
+      <version>${eclipselink.version}</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
@@ -97,6 +103,77 @@
 		  <testFailureIgnore>true</testFailureIgnore>
 		</configuration>
       </plugin>
+      
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.5</version>
+        <executions>
+          <execution>
+            <id>copy-module-skeleton</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${as7module.destdir}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${as7module.srcdir}</directory>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>              
+            </configuration>            
+          </execution>
+          <execution>
+            <id>copy-integration</id>
+            <phase>install</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${as7module.destdir}/org/eclipse/persistence/main</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <filtering>false</filtering>
+                  <includes>
+                  	<include>as7-eclipselink-integration-0.0.1-SNAPSHOT.jar</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>            
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+      	<artifactId>maven-dependency-plugin</artifactId>
+      	<version>2.4</version>
+		<executions>
+			<execution>
+				<id>copy-archives</id>
+				<phase>prepare-package</phase>
+				<goals>
+					<goal>copy</goal>
+				</goals>
+				<configuration>
+					<artifactItems>
+						<artifactItem>
+							<groupId>org.eclipse.persistence</groupId>
+							<artifactId>eclipselink</artifactId>
+							<version>${eclipselink.version}</version>
+							<type>jar</type>
+							<overWrite>true</overWrite>
+							<outputDirectory>${as7module.destdir}/org/eclipse/persistence/main</outputDirectory>
+							<destFileName>${ECLIPSELINK_JAR_NAME}</destFileName>
+						</artifactItem>
+					</artifactItems>
+				</configuration>
+			</execution>
+		</executions>
+      </plugin>
+      
+      <!--  phase install -->
+      
     </plugins>
   </build>
   <profiles>

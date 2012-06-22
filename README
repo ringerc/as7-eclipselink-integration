@@ -17,7 +17,7 @@ TO BUILD
 
 To build this module, run:
 
-  mvn -DskipTests=true package
+  mvn -DskipTests=true clean install
 
 Why skip tests? The tests are Arquillian integration tests that require
 JBoss AS 7 to be running locally on default ports unless overridden. Some
@@ -25,9 +25,39 @@ of the tests require the VFS integration system property specified below to be
 set server-side. The tests will fail unless your environment is set up
 correctly, so you can skip them if you just want to produce the library.
 
-The library is produced in target/
+The library is produced in target/as7-eclipselink-integration-[VERSION].jar
 
+TO INSTALL ECLIPSELINK INTO JBOSS AS 7
+--------------------------------------
 
+The build also produces a read-to-install JBoss AS 7 module for EclipseLink
+in target/as7module . You can install it with:
+
+  cp -r target/as7module/* $JBOSS_HOME/modules/
+
+This module includes the integration jar, so you can then specify it only
+as a <scope>provided</scope> dependency in your projects or leave it out
+entirely.
+
+TO INCLUDE THE INTEGRATION IN YOUR PROJECT
+------------------------------------------
+
+Once installed into the local repository, you may add a dependency on this
+library with:
+
+<dependency>
+  <groupId>id.au.ringerc</groupId>
+  <artifactId>as7-eclipselink-integration</artifactId>
+  <version>1.0.0</version>
+</dependency>
+
+If you're using the EclipseLink module produced by this build, you can add
+<scope>provided</scope> to avoid packaging it in your archives, as the server
+already has access to it. It isn't even strictly necessary to depend on it
+at all in this case.
+
+Merely including the integration in your project doesn't do anything.
+You need to activate the various parts of it, as shown below.
 
 
 VFS INTEGRATION
@@ -46,7 +76,7 @@ your EclipseLink module.
 
 To set the system property you can use jboss-cli:
 
-  jboss-cli.sh --connect /system-property=eclipselink.archive.factory:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossArchiveFactoryImpl)
+  $JBOSS_HOME/bin/jboss-cli.sh --connect '/system-property=eclipselink.archive.factory:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossArchiveFactoryImpl)'
 
 or manually edit the server configuration xml as per
 https://community.jboss.org/wiki/JBossAS7SystemProperties
