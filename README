@@ -1,0 +1,82 @@
+This library is a collection of utility classes to aid the integration
+of EclipseLink into JBossAS7. It bundles the code from:
+
+  https://community.jboss.org/wiki/HowToUseEclipseLinkWithAS7
+
+into a small simple library.
+
+You may add this library as a dependency in your pom to use it private to your
+deployment. Alternately, you may add it to the module.xml for an EclipseLink
+module that's deployed to the server so it's available to all clients.
+
+Each integration point is independent, and if not explicitly activated
+is ignored, so you can use only the parts you need.
+
+VFS INTEGRATION
+---------------
+
+To enable VFS integration, allowing:
+	<exclude-unlisted-classes>false</exclude-unlisted-classes>
+to work so you don't need to explicitly list every entity class, set
+the system property:
+
+eclipselink.archive.factory = id.au.ringerc.as7.eclipselinkintegration.JBossArchiveFactoryImpl
+
+This can be done server-wide to enable VFS integration for everything
+that uses EclipseLink if you've added the eclipselink integration jar to
+your EclipseLink module.
+
+To set the system property you can use jboss-cli:
+
+  jboss-cli.sh --connect /system-property=eclipselink.archive.factory:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossArchiveFactoryImpl)
+
+or manually edit the server configuration xml as per
+https://community.jboss.org/wiki/JBossAS7SystemProperties
+
+LOGGING INTEGRATION
+-------------------
+
+To enable logging integration, set the persistence unit property
+eclipselink.logging.logger to id.au.ringerc.as7.eclipselinkintegration.JBossLogger, eg
+in persistence.xml:
+
+	<properties>
+  		<property name="eclipselink.logging.logger" value="id.au.ringerc.testcase.as7.eclipselink.JBossLogger"/>
+	</properties>
+
+Now optionally increase log detail for EclipseLink. To do this,
+stop AS7 (important) then in $JBOSS_HOME/standalone/configuration/standalone.xml
+find <subsystem xmlns="urn:jboss:domain:logging:1.1"> and under it add the stanza:
+
+	<logger category="org.eclipse.persistence">
+	    <level name="TRACE"/>
+	</logger>
+
+... setting whatever logging level you want. Note that if you make this change
+while AS 7 is running it'll overwrite it for you when it exits.
+
+PLATFORM ADAPTER FOR ECLIPSELINK 2.3.2
+--------------------------------------
+
+If you need to use EclipseLink verisions older than 2.3.2 or 2.3.3, set the
+persistence unit property eclipselink.target-server to
+id.au.ringerc.as7.eclipselinkintegration.JBossAS7ServerPlatform to work
+around bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=365704 .
+
+
+CREATING A JBOSS MODULE FOR ECLIPSELINK
+---------------------------------------
+
+A module skeleton for EclipseLink is provided in provided in jboss7modules/ .
+I've omitted the EclipseLink archive to save space.
+
+The bundled module.xml specifies eclipselink-2.4.0-RC2.jar as the target archive,
+and that's what I tested with. If you want to use a different version or filename,
+specify it by editing module.xml.
+
+To prepare and install the module:
+
+  mvn depdendency:resolve
+  cp ~/.m2/repository/org/eclipse/persistence/eclipselink/2.4.0-RC2/eclipselink-2.4.0-RC2.jar\
+     jboss7modules/org/eclipse/persistence/main/eclipselink-2.4.0-RC2.jar
+  cp -r jboss7modules/* $JBOSS_HOME/modules/
