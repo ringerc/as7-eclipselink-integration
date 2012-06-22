@@ -7,10 +7,13 @@ into a small simple library.
 
 You may add this library as a dependency in your pom to use it private to your
 deployment. Alternately, you may add it to the module.xml for an EclipseLink
-module that's deployed to the server so it's available to all clients.
+module that's deployed to the server so it's available to all clients. These
+instructions assume you want to take the latter approach.
 
 Each integration point is independent, and if not explicitly activated
-is ignored, so you can use only the parts you need.
+is ignored, so you can use only the parts you need. The instructions below
+assume you want all of them; if you don't, omit appropriate system
+properties as shown below.
 
 TO BUILD
 --------
@@ -35,62 +38,56 @@ in target/as7module . You can install it with:
 
   cp -r target/as7module/* $JBOSS_HOME/modules/
 
-This module includes the integration jar, so you can then specify it only
-as a <scope>provided</scope> dependency in your projects or leave it out
-entirely.
+This module includes the integration jar so you don't need to worry about
+adding it to your projects' pom.xml files, it'll already be present on
+the server.
 
-TO INCLUDE THE INTEGRATION IN YOUR PROJECT
-------------------------------------------
+Now to enable all integration points, run:
 
-Once installed into the local repository, you may add a dependency on this
-library with:
+  $JBOSS_HOME/bin/jboss-cli.sh --connect 
 
-<dependency>
-  <groupId>id.au.ringerc</groupId>
-  <artifactId>as7-eclipselink-integration</artifactId>
-  <version>1.0.0</version>
-</dependency>
+and in the cli run:
 
-If you're using the EclipseLink module produced by this build, you can add
-<scope>provided</scope> to avoid packaging it in your archives, as the server
-already has access to it. It isn't even strictly necessary to depend on it
-at all in this case.
+  /system-property=eclipselink.target-server:add(value=JBoss)
+  /system-property=eclipselink.archive.factory:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossArchiveFactoryImpl)
+  /system-property=eclipselink.logging.logger:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossLogger)
 
-Merely including the integration in your project doesn't do anything.
-You need to activate the various parts of it, as shown below.
+Running "mvn test" for jbossas7_eclipselink_integration should now pass.
 
 
 VFS INTEGRATION
 ---------------
 
-To enable VFS integration, allowing:
-	<exclude-unlisted-classes>false</exclude-unlisted-classes>
-to work so you don't need to explicitly list every entity class, set
-the system property:
+VFS integration is controlled by the eclipselink.archive.factory system property.
 
-eclipselink.archive.factory = id.au.ringerc.as7.eclipselinkintegration.JBossArchiveFactoryImpl
+To enable:
 
-This can be done server-wide to enable VFS integration for everything
-that uses EclipseLink if you've added the eclipselink integration jar to
-your EclipseLink module.
+  /system-property=eclipselink.archive.factory:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossArchiveFactoryImpl)
 
-To set the system property you can use jboss-cli:
+To disable:
 
-  $JBOSS_HOME/bin/jboss-cli.sh --connect '/system-property=eclipselink.archive.factory:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossArchiveFactoryImpl)'
+  /system-property=eclipselink.archive.factory:remove
 
-or manually edit the server configuration xml as per
-https://community.jboss.org/wiki/JBossAS7SystemProperties
+
+It appears that control over VFS integration isn't supported at the persistence.xml properties
+level, only as a system property.
 
 LOGGING INTEGRATION
 -------------------
 
-To enable logging integration, set the persistence unit property
-eclipselink.logging.logger to id.au.ringerc.as7.eclipselinkintegration.JBossLogger, eg
+Logging integration is controlled by the property eclipselink.logging.logger . This
+may be set to id.au.ringerc.as7.eclipselinkintegration.JBossLogger either as a system property
+or in persistence.xml. 
+
 in persistence.xml:
 
-	<properties>
-  		<property name="eclipselink.logging.logger" value="id.au.ringerc.testcase.as7.eclipselink.JBossLogger"/>
-	</properties>
+  <properties>
+    <property name="eclipselink.logging.logger" value="id.au.ringerc.testcase.as7.eclipselink.JBossLogger"/>
+  </properties>
+
+... or if you installed the module with bundled integration code, you can set it as a system property:
+
+  $JBOSS_HOME/bin/jboss-cli.sh --connect '/system-property=eclipselink.logging.logger:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossLogger)'
 
 Now optionally increase log detail for EclipseLink. To do this,
 stop AS7 (important) then in $JBOSS_HOME/standalone/configuration/standalone.xml
@@ -107,24 +104,21 @@ PLATFORM ADAPTER FOR ECLIPSELINK 2.3.2
 --------------------------------------
 
 If you need to use EclipseLink verisions older than 2.3.2 or 2.3.3, set the
-persistence unit property eclipselink.target-server to
+persistence unit property or system property eclipselink.target-server to
 id.au.ringerc.as7.eclipselinkintegration.JBossAS7ServerPlatform to work
 around bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=365704 .
 
+PLATFORM ADAPTER FOR ECLIPSELINK >= 2.3.3 and >= 2.4.0
+------------------------------------------------------
 
-CREATING A JBOSS MODULE FOR ECLIPSELINK
----------------------------------------
+EclipseLink versions that include a fix for 365704 still have to be told
+they're on JBoss. You can do this by setting the persistence property
+eclipselink.target-server to "jboss", or by setting it as a system property:
 
-A module skeleton for EclipseLink is provided in provided in jboss7modules/ .
-I've omitted the EclipseLink archive to save space.
+  <properties>
+    <property name="eclipselink.target-server" value="JBoss"/>
+  </properties>
 
-The bundled module.xml specifies eclipselink-2.4.0-RC2.jar as the target archive,
-and that's what I tested with. If you want to use a different version or filename,
-specify it by editing module.xml.
+... or system-wide:
 
-To prepare and install the module:
-
-  mvn depdendency:resolve
-  cp ~/.m2/repository/org/eclipse/persistence/eclipselink/2.4.0-RC2/eclipselink-2.4.0-RC2.jar\
-     jboss7modules/org/eclipse/persistence/main/eclipselink-2.4.0-RC2.jar
-  cp -r jboss7modules/* $JBOSS_HOME/modules/
+  $JBOSS_HOME/bin/jboss-cli.sh --connect '/system-property=eclipselink.target-server:add(value=JBoss)'
