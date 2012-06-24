@@ -2,9 +2,12 @@
 <module xmlns="urn:jboss:module:1.1" name="org.eclipse.persistence">
  <resources>
   <resource-root path="${ECLIPSELINK_JAR_NAME}"/>
-  <resource-root path="${INTEGRATION_JAR_NAME}"/>
  </resources>
  <dependencies>
+  <!-- If the integration module is installed use it and expose it on the classpath
+       of users of org.eclipse.persistence. This is necessary because EclipseLink will
+       use their classloader to instantiate the logger classes, etc. -->
+  <module name="id.au.ringerc.as7.eclipselinkintegration" export="true" optional="true"/>
   <module name="asm.asm"/>
   <module name="javax.api"/>
   <module name="javax.persistence.api"/>
@@ -16,6 +19,5 @@
   <module name="org.apache.commons.collections"/>
   <module name="org.dom4j"/>
   <module name="org.javassist"/>
-  <module name="org.jboss.logging"/>
  </dependencies>
 </module>

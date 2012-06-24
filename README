@@ -3,17 +3,38 @@ of EclipseLink into JBossAS7. It bundles the code from:
 
   https://community.jboss.org/wiki/HowToUseEclipseLinkWithAS7
 
-into a small simple library.
+into a small JBoss AS 7 module that, when installed, automatically
+activates to handle integration between AS7 and EclipseLink.
 
-You may add this library as a dependency in your pom to use it private to your
-deployment. Alternately, you may add it to the module.xml for an EclipseLink
-module that's deployed to the server so it's available to all clients. These
-instructions assume you want to take the latter approach.
+ISSUES RESOLVED BY THE INTEGRATION
+----------------------------------
 
-Each integration point is independent, and if not explicitly activated
-is ignored, so you can use only the parts you need. The instructions below
-assume you want all of them; if you don't, omit appropriate system
-properties as shown below.
+- EclipseLink doesn't find entity classes unless they're explicitly listed in
+  persistence.xml
+  https://bugs.eclipse.org/bugs/show_bug.cgi?id=383200
+  https://issues.jboss.org/browse/AS7-5062
+  
+- JNDI location for JBoss Transaction Manager is wrong
+  https://bugs.eclipse.org/bugs/show_bug.cgi?id=365704
+  (Workaround only activated on EclipseLink 2.3.2 and below,
+  newer EclipseLink versions include the fix).
+
+- EclipseLink doesn't integrate into JBoss's logging, producing verbose and
+  poorly formatted logs on stderr and not respecting log filtering levels.
+
+ISSUES NOT RESOLVED BY THE INTEGRATION
+--------------------------------------
+
+- Static metamodel isn't populated before user code can access it on JBoss AS
+  7.1.1.Final
+  https://bugs.eclipse.org/bugs/show_bug.cgi?id=383199
+
+Any known issues with EclipseLink + AS7 should be listed on the
+JBoss community link above, and on the EclipseLink bugzilla
+tracking bug for AS7 integration:
+
+  https://bugs.eclipse.org/bugs/show_bug.cgi?id=383201
+
 
 TO BUILD
 --------
@@ -23,102 +44,58 @@ To build this module, run:
   mvn -DskipTests=true clean install
 
 Why skip tests? The tests are Arquillian integration tests that require
-JBoss AS 7 to be running locally on default ports unless overridden. Some
-of the tests require the VFS integration system property specified below to be
-set server-side. The tests will fail unless your environment is set up
-correctly, so you can skip them if you just want to produce the library.
+JBoss AS 7 to be running locally on default ports unless overridden, and
+require the module to be installed on the AS7 server. We don't want a
+build just going ahead and installing a module on your AS7 server, so
+the tests don't do that automatically, and will fail if run without
+that installation being performed.
 
-The library is produced in target/as7-eclipselink-integration-[VERSION].jar
+If you want a different version of EclipseLink to be used, you can specify it
+with the eclipselink.version Maven property, eg;
 
-TO INSTALL ECLIPSELINK INTO JBOSS AS 7
---------------------------------------
+  mvn -Declipselink.version=2.3.3-M3 clean install
 
-The build also produces a read-to-install JBoss AS 7 module for EclipseLink
-in target/as7module . You can install it with:
+
+TO INSTALL ECLIPSELINK AND THE INTEGRATION INTO JBOSS AS 7
+----------------------------------------------------------
+
+The build produces a pair of read-to-install JBoss AS 7 modules for EclipseLink
+and the integration module in target/as7module. You can install them with:
 
   cp -r target/as7module/* $JBOSS_HOME/modules/
 
-This module includes the integration jar so you don't need to worry about
-adding it to your projects' pom.xml files, it'll already be present on
-the server.
+Note that you're installing two modules:
 
-Now to enable all integration points, run:
+  org.eclipse.persistence
+  id.au.ringerc.eclipselinkintegration
 
-  $JBOSS_HOME/bin/jboss-cli.sh --connect 
+The latter has a META-INF/services entry that'll cause JBoss AS 7 to activate
+it when an EclipseLink persistence provider is detected.
 
-and in the cli run:
+If you want to package a different EclipseLink version, either rebuild with 
+the eclipselink version specified as a build property (recommended, see above)
+or replace the EclipseLink jar in the module and modify module.xml to point
+to the new jar name.
 
-  /system-property=eclipselink.target-server:add(value=JBoss)
-  /system-property=eclipselink.archive.factory:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossArchiveFactoryImpl)
-  /system-property=eclipselink.logging.logger:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossLogger)
+The EclipseLink module will function without the integration module, just without
+the fixes offered by the integration module.
 
-Running "mvn test" for jbossas7_eclipselink_integration should now pass.
+If you prefer to package EclipseLink with your app, you can install only the
+integration module; just don't copy the org.eclipse.persistence module over.
+To activate integration in your deployment you'll need to add a 
+jboss-deployment-structure.xml:
+  https://docs.jboss.org/author/display/AS7/Class+Loading+in+AS7
+that adds a dependency on id.au.ringerc.as7.eclipselinkintegration , or
+alternately just package the integratoin jar with your app, in which case it'll
+get auto-activated.
 
+CONTROLLING LOG LEVELS
+----------------------
 
-VFS INTEGRATION
----------------
+You may optionally increase log detail for EclipseLink in AS7:
 
-VFS integration is controlled by the eclipselink.archive.factory system property.
+  jboss-cli.sh --connect '/subsystem=logging/logger=org.eclipse.persistence:add(level=TRACE)'
 
-To enable:
+and/or in the integration module:
 
-  /system-property=eclipselink.archive.factory:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossArchiveFactoryImpl)
-
-To disable:
-
-  /system-property=eclipselink.archive.factory:remove
-
-
-It appears that control over VFS integration isn't supported at the persistence.xml properties
-level, only as a system property.
-
-LOGGING INTEGRATION
--------------------
-
-Logging integration is controlled by the property eclipselink.logging.logger . This
-may be set to id.au.ringerc.as7.eclipselinkintegration.JBossLogger either as a system property
-or in persistence.xml. 
-
-in persistence.xml:
-
-  <properties>
-    <property name="eclipselink.logging.logger" value="id.au.ringerc.testcase.as7.eclipselink.JBossLogger"/>
-  </properties>
-
-... or if you installed the module with bundled integration code, you can set it as a system property:
-
-  $JBOSS_HOME/bin/jboss-cli.sh --connect '/system-property=eclipselink.logging.logger:add(value=id.au.ringerc.as7.eclipselinkintegration.JBossLogger)'
-
-Now optionally increase log detail for EclipseLink. To do this,
-stop AS7 (important) then in $JBOSS_HOME/standalone/configuration/standalone.xml
-find <subsystem xmlns="urn:jboss:domain:logging:1.1"> and under it add the stanza:
-
-	<logger category="org.eclipse.persistence">
-	    <level name="TRACE"/>
-	</logger>
-
-... setting whatever logging level you want. Note that if you make this change
-while AS 7 is running it'll overwrite it for you when it exits.
-
-PLATFORM ADAPTER FOR ECLIPSELINK 2.3.2
---------------------------------------
-
-If you need to use EclipseLink verisions older than 2.3.2 or 2.3.3, set the
-persistence unit property or system property eclipselink.target-server to
-id.au.ringerc.as7.eclipselinkintegration.JBossAS7ServerPlatform to work
-around bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=365704 .
-
-PLATFORM ADAPTER FOR ECLIPSELINK >= 2.3.3 and >= 2.4.0
-------------------------------------------------------
-
-EclipseLink versions that include a fix for 365704 still have to be told
-they're on JBoss. You can do this by setting the persistence property
-eclipselink.target-server to "jboss", or by setting it as a system property:
-
-  <properties>
-    <property name="eclipselink.target-server" value="JBoss"/>
-  </properties>
-
-... or system-wide:
-
-  $JBOSS_HOME/bin/jboss-cli.sh --connect '/system-property=eclipselink.target-server:add(value=JBoss)'
+  jboss-cli.sh --connect '/subsystem=logging/logger=id.au.ringerc.as7.eclipselinkpersistence:add(level=TRACE)'

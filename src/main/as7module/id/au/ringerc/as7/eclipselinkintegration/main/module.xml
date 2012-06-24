@@ -1,0 +1,20 @@
+<module xmlns="urn:jboss:module:1.1" name="id.au.ringerc.as7.eclipselinkintegration">
+    <properties>
+        <property name="jboss.api" value="private"/>
+    </properties>
+
+    <resources>
+        <resource-root path="${INTEGRATION_JAR_NAME}"/>
+    </resources>
+
+    <dependencies>
+        <module name="javax.annotation.api"/>
+        <module name="javax.persistence.api"/>
+        <module name="javax.transaction.api"/>
+        <module name="org.jboss.as.jpa.spi"/>
+        <module name="org.jboss.vfs"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.jboss.jandex"/>
+        <module name="org.eclipse.persistence"/>
+    </dependencies>
+</module>

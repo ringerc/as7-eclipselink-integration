@@ -2,17 +2,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>id.au.ringerc</groupId>
-  <artifactId>as7-eclipselink-integration</artifactId>
-  <version>1.0.0</version>
+  <artifactId>jboss-as-jpa-eclipselink</artifactId>
+  <version>1.1.0</version>
   <packaging>jar</packaging>
-  <name>as7.eclipselink</name>
-  <url>http://maven.apache.org</url>
+  <name>JBoss Application Server Addon: EclipseLink 2.4.x integration</name>
+  <url>https://community.jboss.org/wiki/HowToUseEclipseLinkWithAS7</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <eclipselink.version.2.3.stable>2.3.2</eclipselink.version.2.3.stable>
     <eclipselink.version.2.3.milestone>2.3.3-M3</eclipselink.version.2.3.milestone>
     <eclipselink.version.2.4.milestone>2.4.0-RC2</eclipselink.version.2.4.milestone>
     <eclipselink.version>${eclipselink.version.2.4.milestone}</eclipselink.version>
+    
+    <jboss-version>7.1.1.Final</jboss-version>
     
     <as7module.srcdir>${project.basedir}/src/main/as7module</as7module.srcdir>
     <as7module.destdir>${project.build.directory}/as7module</as7module.destdir>
@@ -30,6 +32,16 @@
   </repositories>
   <dependencyManagement>
     <dependencies>
+      <!-- If/when this integration is added to the JBoss AS 7 build, this should become
+           the parent pom. For now we don't want to add it as a parent pom because it
+           refers to archi -->
+	  <dependency>
+	    <groupId>org.jboss.as</groupId>
+	    <artifactId>jboss-as-jpa-parent</artifactId>
+	    <version>${jboss-version}</version>
+	    <type>pom</type>
+	    <scope>import</scope>
+	  </dependency>
       <dependency>
         <groupId>org.jboss.arquillian</groupId>
         <artifactId>arquillian-bom</artifactId>
@@ -40,6 +52,15 @@
     </dependencies>
   </dependencyManagement>
   <dependencies>
+    <!-- 
+         This internal JBoss AS 7 API allows us to implement
+         JBoss AS 7's persistence provider integration API.
+    -->
+    <dependency>
+      <groupId>org.jboss.as</groupId>
+      <artifactId>jboss-as-jpa-spi</artifactId>
+    </dependency>
+    
     <dependency>
       <groupId>org.eclipse.persistence</groupId>
       <artifactId>eclipselink</artifactId>
@@ -57,21 +78,18 @@
     <dependency>
         <groupId>org.jboss.logging</groupId>
         <artifactId>jboss-logging</artifactId>
-        <version>3.1.1.GA</version>
         <scope>provided</scope>
         <optional>true</optional>
     </dependency>
     <dependency>
     	<groupId>org.jboss</groupId>
     	<artifactId>jboss-vfs</artifactId>
-    	<version>3.1.0.Final</version>
     	<scope>provided</scope>
     	<optional>true</optional>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.10</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -131,13 +149,13 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${as7module.destdir}/org/eclipse/persistence/main</outputDirectory>
+              <outputDirectory>${as7module.destdir}/id/au/ringerc/as7/eclipselinkintegration/main</outputDirectory>
               <resources>
                 <resource>
                   <directory>${project.build.directory}</directory>
                   <filtering>false</filtering>
                   <includes>
-                  	<include>as7-eclipselink-integration-0.0.1-SNAPSHOT.jar</include>
+                  	<include>${INTEGRATION_JAR_NAME}</include>
                   </includes>
                 </resource>
               </resources>
