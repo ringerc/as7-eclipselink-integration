@@ -48,7 +48,11 @@ JBoss AS 7 to be running locally on default ports unless overridden, and
 require the module to be installed on the AS7 server. We don't want a
 build just going ahead and installing a module on your AS7 server, so
 the tests don't do that automatically, and will fail if run without
-that installation being performed.
+that installation being performed. Proper integration tests require
+it to be possible to bundle EclipseLink with the test deployment, and
+that seems to be impossible right now:
+  https://community.jboss.org/thread/201605
+so you have to install the eclipselink module then re-test.
 
 If you want a different version of EclipseLink to be used, you can specify it
 with the eclipselink.version Maven property, eg;

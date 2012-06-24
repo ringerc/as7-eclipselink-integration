@@ -40,24 +40,25 @@ import org.junit.Assert;
  */
 class TestBase {
 	
-	private static final boolean verbose = false;
+	protected static boolean verbose = true;
+	private static File persistenceXml;
 
 	protected static WebArchive makeDeployment(String persistenceXmlName) throws IOException {
-		File persistenceXml = new File( "src/test/resources/META-INF/", persistenceXmlName);
+		persistenceXml = new File( "src/test/resources/META-INF/", persistenceXmlName);
 		WebArchive jar = ShrinkWrap.create(WebArchive.class)
 				.addAsResource(persistenceXml, "META-INF/persistence.xml")
 				.addAsWebInfResource(new File("src/test/resources/META-INF/beans.xml"), "beans.xml")
-				.addClasses(
-						DBProvider.class, DummyEntity.class, DummyEJB.class, TestBase.class,
-						JBossAS7ServerPlatform.class, JBossAS7ServerPlatform.JBossAS7TransactionController.class,
-						JBossLogger.class, JBossArchiveFactoryImpl.class, VFSArchive.class);
+				.addClasses(DBProvider.class, DummyEntity.class, DummyEJB.class, TestBase.class);
+		return jar;
+	}
+	
+	protected static void printArchive(WebArchive war) throws IOException {
 		if (verbose) {
 			printPersistenceXml(persistenceXml);
 			System.err.println("\n---");
-			jar.writeTo(System.err, Formatters.VERBOSE);
+			war.writeTo(System.err, Formatters.VERBOSE);
 			System.err.println("\n---\n");
 		}
-		return jar;
 	}
 
 	

@@ -79,6 +79,7 @@ public class EclipseLinkPersistenceProviderAdaptor implements
 	public void addProviderDependencies(ServiceRegistry registry,
 			ServiceTarget target, ServiceBuilder<?> builder,
 			PersistenceUnitMetadata pu) {
+		// No action required
 	}
 
 	@Override
