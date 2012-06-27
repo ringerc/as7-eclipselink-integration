@@ -18,7 +18,7 @@ public class EclipseLinkPersistenceProviderAdaptor implements
 	
 	private final Logger logger = Logger.getLogger(EclipseLinkPersistenceProviderAdaptor.class);
 	
-	private static final String 
+	public static final String 
 		ECLIPSELINK_TARGET_SERVER = "eclipselink.target-server",
 		ECLIPSELINK_ARCHIVE_FACTORY = "eclipselink.archive.factory",
 		ECLIPSELINK_LOGGING_LOGGER = "eclipselink.logging.logger";

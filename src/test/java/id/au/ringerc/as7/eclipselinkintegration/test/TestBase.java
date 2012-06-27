@@ -40,7 +40,7 @@ import org.junit.Assert;
  */
 class TestBase {
 	
-	protected static boolean verbose = true;
+	protected static boolean verbose = false;
 	private static File persistenceXml;
 
 	protected static WebArchive makeDeployment(String persistenceXmlName) throws IOException {
