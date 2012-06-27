@@ -1,1 +1,7 @@
+# Maven build output
 target/
+# Eclipse turds
+.classpath
+.factorypath
+.project
+.settings/
