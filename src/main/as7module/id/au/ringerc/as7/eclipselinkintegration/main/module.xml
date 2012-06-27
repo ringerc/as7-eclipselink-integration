@@ -1,8 +1,4 @@
 <module xmlns="urn:jboss:module:1.1" name="id.au.ringerc.as7.eclipselinkintegration">
-    <properties>
-        <property name="jboss.api" value="private"/>
-    </properties>
-
     <resources>
         <resource-root path="${INTEGRATION_JAR_NAME}"/>
     </resources>

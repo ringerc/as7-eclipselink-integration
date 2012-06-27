@@ -3,14 +3,16 @@
   <!-- SEE https://docs.jboss.org/author/display/AS7/Class+Loading+in+AS7#ClassLoadinginAS7-JBossDeploymentStructureFile -->
   <deployment>
     <exclusions>
+       <!-- Once https://community.jboss.org/thread/201605 can be resolved,
+            these exclusions can be enabled so the tests can run wholly self-contained -->       
+
        <!-- AS7 will add a dependency on EclipseLink if we don't tell it not to.
             Since we're bundling it in our jar, we really don't want it to. -->
-       <!-- Nonfunctional because of possible AS7 bug, see https://community.jboss.org/thread/201605 -->
        <!-- <module name="org.eclipse.persistence"/> -->
        
        <!-- Also exclude any version of the integration that's installed on the server,
             making sure we're testing the local copy. -->
-       <module name="id.au.ringerc.as7.eclipselinkintegration"/>
+       <!-- <module name="id.au.ringerc.as7.eclipselinkintegration"/> -->
     </exclusions>
   </deployment>
 </jboss-deployment-structure>
